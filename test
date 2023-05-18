@@ -1,0 +1,50 @@
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class ApiutilTest {
+
+    @Test
+    void testSetExampleResponse() throws IOException {
+        // Arrange
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        String contentType = "application/json";
+        String example = "{\"key\": \"value\"}";
+
+        // Act
+        Apiutil.setExampleResponse(request, contentType, example);
+
+        // Assert
+        assertEquals("UTF-8", response.getCharacterEncoding());
+        assertEquals(contentType, response.getHeader("Content-Type"));
+        assertEquals(example, response.getContentAsString());
+    }
+
+    @Test
+    void testSetExampleResponse_ExceptionThrown() throws IOException {
+        // Arrange
+        MockedStatic<Apiutil> mockedApiutil = Mockito.mockStatic(Apiutil.class);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        // Act and Assert
+        assertThrows(RuntimeException.class, () -> {
+            mockedApiutil.when(() -> Apiutil.setExampleResponse(request, Mockito.anyString(), Mockito.anyString()))
+                    .thenThrow(new IOException());
+            Apiutil.setExampleResponse(request, "application/json", "{\"key\": \"value\"}");
+        });
+
+        // Verify that the exception is thrown
+        mockedApiutil.verify(() -> Apiutil.setExampleResponse(request, Mockito.anyString(), Mockito.anyString()));
+    }
+}
